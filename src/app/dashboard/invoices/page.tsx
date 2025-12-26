@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import api from "@/lib/api";
-import { Plus, Search, FileText, Download, CheckCircle, Clock, AlertCircle } from "lucide-react";
+import { Plus, Search, FileText, Download, CheckCircle, Clock, AlertCircle, Send } from "lucide-react";
 
 const statusConfig: any = {
     DRAFT: { label: "Draft", icon: AlertCircle, color: "text-slate-600 bg-slate-50 border-slate-100" },
@@ -188,6 +188,15 @@ export default function InvoicesPage() {
                                             >
                                                 <Download size={18} />
                                             </button>
+                                            {invoice.status === 'DRAFT' && (
+                                                <button
+                                                    onClick={() => updateStatus(invoice.id, 'SENT')}
+                                                    className="p-1.5 text-slate-400 hover:text-blue-600 transition-colors"
+                                                    title="Mark as Sent"
+                                                >
+                                                    <Send size={18} />
+                                                </button>
+                                            )}
                                             {invoice.status !== 'PAID' && (
                                                 <button
                                                     onClick={() => updateStatus(invoice.id, 'PAID')}

@@ -5,7 +5,6 @@ import api from "@/lib/api";
 import { FileText, Download, CheckCircle, Clock, AlertCircle } from "lucide-react";
 
 const statusConfig: any = {
-    DRAFT: { label: "Draft", icon: AlertCircle, color: "text-slate-600 bg-slate-50 border-slate-100" },
     SENT: { label: "Sent", icon: Clock, color: "text-blue-600 bg-blue-50 border-blue-100" },
     PAID: { label: "Paid", icon: CheckCircle, color: "text-emerald-600 bg-emerald-50 border-emerald-100" },
 };

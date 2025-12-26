@@ -156,36 +156,6 @@ export default function ProjectsPage() {
                                             </div>
                                             <span className="text-xs font-semibold text-slate-700">{project.client?.name}</span>
                                         </div>
-                                        <div className="flex items-center gap-3">
-                                            <input
-                                                type="file"
-                                                id={`file-${project.id}`}
-                                                className="hidden"
-                                                onChange={async (e) => {
-                                                    e.stopPropagation();
-                                                    const file = e.target.files?.[0];
-                                                    if (!file) return;
-                                                    const formData = new FormData();
-                                                    formData.append("file", file);
-                                                    try {
-                                                        await api.post(`/upload/${project.id}`, formData);
-                                                        toast.success("File uploaded");
-                                                        fetchData();
-                                                    } catch (err) {
-                                                        toast.error("Upload failed");
-                                                    }
-                                                }}
-                                            />
-                                            <label
-                                                htmlFor={`file-${project.id}`}
-                                                onClick={(e) => e.stopPropagation()}
-                                                className="flex items-center gap-1.5 text-xs font-bold cursor-pointer hover:opacity-80"
-                                                style={{ color: 'var(--brand-primary)' }}
-                                            >
-                                                <FileUp size={14} />
-                                                Upload
-                                            </label>
-                                        </div>
                                     </div>
                                 </div>
 
