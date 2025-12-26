@@ -1,0 +1,11 @@
+# Turbo / Monorepo caches
+.turbo/
+**/.turbo/
+
+# Build outputs
+dist/
+build/
+.next/
+node_modules/
+# Keep environment variables out of version control
+.env
