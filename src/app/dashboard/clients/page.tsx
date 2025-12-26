@@ -13,6 +13,7 @@ export default function ClientsPage() {
     const [portalPassword, setPortalPassword] = useState("");
     const [newClient, setNewClient] = useState({ name: "", email: "", phone: "" });
     const [menuOpenClientId, setMenuOpenClientId] = useState<string | null>(null);
+    const [searchTerm, setSearchTerm] = useState("");
 
     const fetchClients = async () => {
         try {
@@ -73,6 +74,8 @@ export default function ClientsPage() {
                     <input
                         type="text"
                         placeholder="Search clients..."
+                        value={searchTerm}
+                        onChange={(e) => setSearchTerm(e.target.value)}
                         className="w-full pl-10 pr-4 py-2 bg-white border border-slate-200 rounded-lg focus:outline-none focus:ring-2 text-black text-sm"
                         style={{ '--tw-ring-color': 'var(--brand-primary)' } as any}
                     />
@@ -98,86 +101,92 @@ export default function ClientsPage() {
                         </tr>
                     </thead>
                     <tbody className="divide-y divide-slate-100">
-                        {clients.map((client) => (
-                            <tr key={client.id} className="hover:bg-slate-50 transition-colors group">
-                                <td className="px-6 py-4">
-                                    <div className="flex items-center gap-3">
-                                        <div className="w-9 h-9 rounded-full flex items-center justify-center font-bold text-sm" style={{ backgroundColor: 'var(--brand-soft)', color: 'var(--brand-primary)' }}>
-                                            {client.name[0]}
-                                        </div>
-                                        <span className="font-semibold text-slate-900 text-black">{client.name}</span>
-                                    </div>
-                                </td>
-                                <td className="px-6 py-4">
-                                    <div className="space-y-1">
-                                        <div className="flex items-center gap-2 text-sm text-slate-600">
-                                            <Mail size={14} />
-                                            {client.email}
-                                        </div>
-                                        {client.phone && (
-                                            <div className="flex items-center gap-2 text-sm text-slate-400">
-                                                <Phone size={14} />
-                                                {client.phone}
+                        {clients
+                            .filter(client =>
+                                client.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                                client.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                                (client.phone && client.phone.toLowerCase().includes(searchTerm.toLowerCase()))
+                            )
+                            .map((client) => (
+                                <tr key={client.id} className="hover:bg-slate-50 transition-colors group">
+                                    <td className="px-6 py-4">
+                                        <div className="flex items-center gap-3">
+                                            <div className="w-9 h-9 rounded-full flex items-center justify-center font-bold text-sm" style={{ backgroundColor: 'var(--brand-soft)', color: 'var(--brand-primary)' }}>
+                                                {client.name[0]}
                                             </div>
-                                        )}
-                                    </div>
-                                </td>
-                                <td className="px-6 py-4 text-sm text-slate-500">
-                                    {client.userId ? (
-                                        <div className="flex items-center gap-1.5 text-emerald-600 font-bold text-[10px] uppercase">
-                                            <CheckCircle2 size={12} />
-                                            Portal Active
+                                            <span className="font-semibold text-slate-900 text-black">{client.name}</span>
                                         </div>
-                                    ) : (
-                                        <button
-                                            onClick={() => {
-                                                setSelectedClient(client);
-                                                setIsPortalModalOpen(true);
-                                            }}
-                                            className="flex items-center gap-1.5 font-bold text-[10px] uppercase hover:opacity-80 transition-opacity"
-                                            style={{ color: 'var(--brand-primary)' }}
-                                        >
-                                            <Key size={12} />
-                                            Enable Portal
-                                        </button>
-                                    )}
-                                </td>
-                                <td className="px-6 py-4 text-right relative">
-                                    <button
-                                        onClick={() => setMenuOpenClientId(menuOpenClientId === client.id ? null : client.id)}
-                                        className="text-slate-400 hover:text-slate-600 p-1 rounded-full hover:bg-slate-100 transition-all"
-                                    >
-                                        <MoreVertical size={18} />
-                                    </button>
-
-                                    {menuOpenClientId === client.id && (
-                                        <div className="absolute right-6 top-12 w-48 bg-white rounded-xl shadow-xl border border-slate-100 py-1 z-10 text-left">
-                                            {client.userId ? (
-                                                <button
-                                                    onClick={() => handleDisablePortal(client)}
-                                                    className="w-full px-4 py-2 text-sm text-rose-600 hover:bg-rose-50 flex items-center gap-2 font-medium"
-                                                >
-                                                    <ShieldOff size={16} />
-                                                    Deactivate Portal
-                                                </button>
-                                            ) : (
-                                                <button
-                                                    onClick={() => {
-                                                        setSelectedClient(client);
-                                                        setIsPortalModalOpen(true);
-                                                        setMenuOpenClientId(null);
-                                                    }}
-                                                    className="w-full px-4 py-2 text-sm text-slate-700 hover:bg-slate-50 flex items-center gap-2 font-medium"
-                                                >
-                                                    <Key size={16} />
-                                                    Enable Portal
-                                                </button>
+                                    </td>
+                                    <td className="px-6 py-4">
+                                        <div className="space-y-1">
+                                            <div className="flex items-center gap-2 text-sm text-slate-600">
+                                                <Mail size={14} />
+                                                {client.email}
+                                            </div>
+                                            {client.phone && (
+                                                <div className="flex items-center gap-2 text-sm text-slate-400">
+                                                    <Phone size={14} />
+                                                    {client.phone}
+                                                </div>
                                             )}
                                         </div>
-                                    )}
-                                </td>
-                            </tr>
-                        ))}
+                                    </td>
+                                    <td className="px-6 py-4 text-sm text-slate-500">
+                                        {client.userId ? (
+                                            <div className="flex items-center gap-1.5 text-emerald-600 font-bold text-[10px] uppercase">
+                                                <CheckCircle2 size={12} />
+                                                Portal Active
+                                            </div>
+                                        ) : (
+                                            <button
+                                                onClick={() => {
+                                                    setSelectedClient(client);
+                                                    setIsPortalModalOpen(true);
+                                                }}
+                                                className="flex items-center gap-1.5 font-bold text-[10px] uppercase hover:opacity-80 transition-opacity"
+                                                style={{ color: 'var(--brand-primary)' }}
+                                            >
+                                                <Key size={12} />
+                                                Enable Portal
+                                            </button>
+                                        )}
+                                    </td>
+                                    <td className="px-6 py-4 text-right relative">
+                                        <button
+                                            onClick={() => setMenuOpenClientId(menuOpenClientId === client.id ? null : client.id)}
+                                            className="text-slate-400 hover:text-slate-600 p-1 rounded-full hover:bg-slate-100 transition-all"
+                                        >
+                                            <MoreVertical size={18} />
+                                        </button>
+
+                                        {menuOpenClientId === client.id && (
+                                            <div className="absolute right-6 top-12 w-48 bg-white rounded-xl shadow-xl border border-slate-100 py-1 z-10 text-left">
+                                                {client.userId ? (
+                                                    <button
+                                                        onClick={() => handleDisablePortal(client)}
+                                                        className="w-full px-4 py-2 text-sm text-rose-600 hover:bg-rose-50 flex items-center gap-2 font-medium"
+                                                    >
+                                                        <ShieldOff size={16} />
+                                                        Deactivate Portal
+                                                    </button>
+                                                ) : (
+                                                    <button
+                                                        onClick={() => {
+                                                            setSelectedClient(client);
+                                                            setIsPortalModalOpen(true);
+                                                            setMenuOpenClientId(null);
+                                                        }}
+                                                        className="w-full px-4 py-2 text-sm text-slate-700 hover:bg-slate-50 flex items-center gap-2 font-medium"
+                                                    >
+                                                        <Key size={16} />
+                                                        Enable Portal
+                                                    </button>
+                                                )}
+                                            </div>
+                                        )}
+                                    </td>
+                                </tr>
+                            ))}
                         {clients.length === 0 && (
                             <tr>
                                 <td colSpan={4} className="px-6 py-12 text-center text-slate-500">

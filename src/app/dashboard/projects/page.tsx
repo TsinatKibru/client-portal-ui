@@ -19,6 +19,7 @@ export default function ProjectsPage() {
     const [clients, setClients] = useState<any[]>([]);
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [newProject, setNewProject] = useState({ title: "", description: "", clientId: "" });
+    const [searchTerm, setSearchTerm] = useState("");
 
     const fetchData = async () => {
         try {
@@ -93,6 +94,8 @@ export default function ProjectsPage() {
                     <input
                         type="text"
                         placeholder="Search projects..."
+                        value={searchTerm}
+                        onChange={(e) => setSearchTerm(e.target.value)}
                         className="w-full pl-10 pr-4 py-2 bg-white border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-black text-sm"
                     />
                 </div>
@@ -107,96 +110,102 @@ export default function ProjectsPage() {
             </div>
 
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                {projects.map((project) => {
-                    const status = statusConfig[project.status];
-                    const StatusIcon = status.icon;
-                    return (
-                        <div
-                            key={project.id}
-                            onClick={() => router.push(`/dashboard/projects/${project.id}`)}
-                            className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden flex flex-col hover:border-indigo-300 transition-all cursor-pointer group"
-                        >
-                            <div className="p-6 flex-1">
-                                <div className="flex items-start justify-between mb-4">
-                                    <div className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full border text-[11px] font-bold uppercase tracking-wider ${status.color}`}>
-                                        <StatusIcon size={12} />
-                                        {status.label}
-                                    </div>
-                                    <div className="flex items-center gap-3">
-                                        <span className="text-[11px] text-slate-400 font-medium">#{project.id.slice(-6)}</span>
-                                        <button
-                                            onClick={(e) => {
-                                                e.stopPropagation();
-                                                handleDeleteProject(project.id);
-                                            }}
-                                            className="p-1 text-slate-300 hover:text-rose-600 transition-colors"
-                                            title="Delete Project"
-                                        >
-                                            <Trash2 size={14} />
-                                        </button>
-                                    </div>
-                                </div>
-
-                                <h3 className="text-xl font-bold text-slate-900 mb-2 group-hover:opacity-80 transition-colors text-black" style={{ color: 'var(--brand-primary)' }}>{project.title}</h3>
-                                <p className="text-sm text-slate-500 mb-6 line-clamp-2">{project.description || "No description provided."}</p>
-
-                                <div className="flex items-center justify-between mt-auto pt-4 border-t border-slate-50">
-                                    <div className="flex items-center gap-2">
-                                        <div className="w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-bold uppercase" style={{ backgroundColor: 'var(--brand-soft)', color: 'var(--brand-primary)' }}>
-                                            {project.client?.name[0]}
+                {projects
+                    .filter(project =>
+                        project.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                        (project.description && project.description.toLowerCase().includes(searchTerm.toLowerCase())) ||
+                        project.client?.name.toLowerCase().includes(searchTerm.toLowerCase())
+                    )
+                    .map((project) => {
+                        const status = statusConfig[project.status];
+                        const StatusIcon = status.icon;
+                        return (
+                            <div
+                                key={project.id}
+                                onClick={() => router.push(`/dashboard/projects/${project.id}`)}
+                                className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden flex flex-col hover:border-indigo-300 transition-all cursor-pointer group"
+                            >
+                                <div className="p-6 flex-1">
+                                    <div className="flex items-start justify-between mb-4">
+                                        <div className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full border text-[11px] font-bold uppercase tracking-wider ${status.color}`}>
+                                            <StatusIcon size={12} />
+                                            {status.label}
                                         </div>
-                                        <span className="text-xs font-semibold text-slate-700">{project.client?.name}</span>
+                                        <div className="flex items-center gap-3">
+                                            <span className="text-[11px] text-slate-400 font-medium">#{project.id.slice(-6)}</span>
+                                            <button
+                                                onClick={(e) => {
+                                                    e.stopPropagation();
+                                                    handleDeleteProject(project.id);
+                                                }}
+                                                className="p-1 text-slate-300 hover:text-rose-600 transition-colors"
+                                                title="Delete Project"
+                                            >
+                                                <Trash2 size={14} />
+                                            </button>
+                                        </div>
                                     </div>
-                                    <div className="flex items-center gap-3">
-                                        <input
-                                            type="file"
-                                            id={`file-${project.id}`}
-                                            className="hidden"
-                                            onChange={async (e) => {
-                                                e.stopPropagation();
-                                                const file = e.target.files?.[0];
-                                                if (!file) return;
-                                                const formData = new FormData();
-                                                formData.append("file", file);
-                                                try {
-                                                    await api.post(`/upload/${project.id}`, formData);
-                                                    toast.success("File uploaded");
-                                                    fetchData();
-                                                } catch (err) {
-                                                    toast.error("Upload failed");
-                                                }
-                                            }}
-                                        />
-                                        <label
-                                            htmlFor={`file-${project.id}`}
-                                            onClick={(e) => e.stopPropagation()}
-                                            className="flex items-center gap-1.5 text-xs font-bold cursor-pointer hover:opacity-80"
-                                            style={{ color: 'var(--brand-primary)' }}
-                                        >
-                                            <FileUp size={14} />
-                                            Upload
-                                        </label>
+
+                                    <h3 className="text-xl font-bold text-slate-900 mb-2 group-hover:opacity-80 transition-colors text-black" style={{ color: 'var(--brand-primary)' }}>{project.title}</h3>
+                                    <p className="text-sm text-slate-500 mb-6 line-clamp-2">{project.description || "No description provided."}</p>
+
+                                    <div className="flex items-center justify-between mt-auto pt-4 border-t border-slate-50">
+                                        <div className="flex items-center gap-2">
+                                            <div className="w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-bold uppercase" style={{ backgroundColor: 'var(--brand-soft)', color: 'var(--brand-primary)' }}>
+                                                {project.client?.name[0]}
+                                            </div>
+                                            <span className="text-xs font-semibold text-slate-700">{project.client?.name}</span>
+                                        </div>
+                                        <div className="flex items-center gap-3">
+                                            <input
+                                                type="file"
+                                                id={`file-${project.id}`}
+                                                className="hidden"
+                                                onChange={async (e) => {
+                                                    e.stopPropagation();
+                                                    const file = e.target.files?.[0];
+                                                    if (!file) return;
+                                                    const formData = new FormData();
+                                                    formData.append("file", file);
+                                                    try {
+                                                        await api.post(`/upload/${project.id}`, formData);
+                                                        toast.success("File uploaded");
+                                                        fetchData();
+                                                    } catch (err) {
+                                                        toast.error("Upload failed");
+                                                    }
+                                                }}
+                                            />
+                                            <label
+                                                htmlFor={`file-${project.id}`}
+                                                onClick={(e) => e.stopPropagation()}
+                                                className="flex items-center gap-1.5 text-xs font-bold cursor-pointer hover:opacity-80"
+                                                style={{ color: 'var(--brand-primary)' }}
+                                            >
+                                                <FileUp size={14} />
+                                                Upload
+                                            </label>
+                                        </div>
                                     </div>
                                 </div>
-                            </div>
 
-                            <div className="bg-slate-50 px-6 py-3 border-t border-slate-100 flex gap-2" onClick={(e) => e.stopPropagation()}>
-                                <button
-                                    onClick={() => updateStatus(project.id, "IN_PROGRESS")}
-                                    className={`flex-1 text-[10px] font-bold uppercase border py-1.5 rounded transition-colors ${project.status === 'IN_PROGRESS' ? 'bg-blue-600 text-white border-blue-600' : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-50'}`}
-                                >
-                                    {project.status === 'IN_PROGRESS' ? 'In Progress' : 'Start Work'}
-                                </button>
-                                <button
-                                    onClick={() => updateStatus(project.id, "DELIVERED")}
-                                    className={`flex-1 text-[10px] font-bold uppercase border py-1.5 rounded transition-colors ${project.status === 'DELIVERED' ? 'bg-emerald-600 text-white border-emerald-600' : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-50'}`}
-                                >
-                                    {project.status === 'DELIVERED' ? 'Delivered' : 'Deliver'}
-                                </button>
+                                <div className="bg-slate-50 px-6 py-3 border-t border-slate-100 flex gap-2" onClick={(e) => e.stopPropagation()}>
+                                    <button
+                                        onClick={() => updateStatus(project.id, "IN_PROGRESS")}
+                                        className={`flex-1 text-[10px] font-bold uppercase border py-1.5 rounded transition-colors ${project.status === 'IN_PROGRESS' ? 'bg-blue-600 text-white border-blue-600' : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-50'}`}
+                                    >
+                                        {project.status === 'IN_PROGRESS' ? 'In Progress' : 'Start Work'}
+                                    </button>
+                                    <button
+                                        onClick={() => updateStatus(project.id, "DELIVERED")}
+                                        className={`flex-1 text-[10px] font-bold uppercase border py-1.5 rounded transition-colors ${project.status === 'DELIVERED' ? 'bg-emerald-600 text-white border-emerald-600' : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-50'}`}
+                                    >
+                                        {project.status === 'DELIVERED' ? 'Delivered' : 'Deliver'}
+                                    </button>
+                                </div>
                             </div>
-                        </div>
-                    );
-                })}
+                        );
+                    })}
                 {projects.length === 0 && (
                     <div className="col-span-full py-20 bg-white border border-dashed border-slate-300 rounded-2xl flex flex-col items-center justify-center text-slate-400">
                         <FolderKanban size={48} className="mb-4 opacity-20" />

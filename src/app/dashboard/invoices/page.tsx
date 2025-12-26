@@ -20,6 +20,7 @@ export default function InvoicesPage() {
         status: "DRAFT",
         lineItems: [{ description: "", quantity: 1, rate: 0, tax: 0 }]
     });
+    const [searchTerm, setSearchTerm] = useState("");
 
     const [business, setBusiness] = useState<any>(null);
 
@@ -120,6 +121,8 @@ export default function InvoicesPage() {
                     <input
                         type="text"
                         placeholder="Search invoices..."
+                        value={searchTerm}
+                        onChange={(e) => setSearchTerm(e.target.value)}
                         className="w-full pl-10 pr-4 py-2 bg-white border border-slate-200 rounded-lg focus:outline-none focus:ring-2 text-black text-sm"
                         style={{ '--tw-ring-color': 'var(--brand-primary)' } as any}
                     />
@@ -147,52 +150,57 @@ export default function InvoicesPage() {
                         </tr>
                     </thead>
                     <tbody className="divide-y divide-slate-100">
-                        {invoices.map((invoice) => {
-                            const status = statusConfig[invoice.status];
-                            const StatusIcon = status.icon;
-                            return (
-                                <tr key={invoice.id} className="hover:bg-slate-50 transition-colors group">
-                                    <td className="px-6 py-4 font-bold text-slate-900 border-l-4 border-transparent text-black" style={{ '--tw-group-hover-border-color': 'var(--brand-primary)' } as any}>
-                                        {invoice.invoiceNumber}
-                                    </td>
-                                    <td className="px-6 py-4">
-                                        <div className="text-sm font-medium text-slate-900 text-black">{invoice.client?.name}</div>
-                                        <div className="text-xs text-slate-500">{invoice.client?.email}</div>
-                                    </td>
-                                    <td className="px-6 py-4 font-bold text-slate-900 text-black">
-                                        {currencySymbol}{invoice.total?.toFixed(2) || invoice.amount.toFixed(2)}
-                                    </td>
-                                    <td className="px-6 py-4">
-                                        <div className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full border text-[10px] font-bold uppercase tracking-wider inline-flex ${status.color}`}>
-                                            <StatusIcon size={12} />
-                                            {status.label}
-                                        </div>
-                                    </td>
-                                    <td className="px-6 py-4 text-sm text-slate-500">
-                                        {new Date(invoice.createdAt).toLocaleDateString()}
-                                    </td>
-                                    <td className="px-6 py-4 text-right space-x-2">
-                                        <button
-                                            onClick={() => downloadPdf(invoice.id)}
-                                            className="p-1.5 text-slate-400 hover:opacity-80 transition-opacity"
-                                            style={{ color: 'var(--brand-primary)' }}
-                                            title="Download PDF"
-                                        >
-                                            <Download size={18} />
-                                        </button>
-                                        {invoice.status !== 'PAID' && (
+                        {invoices
+                            .filter(invoice =>
+                                invoice.invoiceNumber.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                                invoice.client?.name.toLowerCase().includes(searchTerm.toLowerCase())
+                            )
+                            .map((invoice) => {
+                                const status = statusConfig[invoice.status];
+                                const StatusIcon = status.icon;
+                                return (
+                                    <tr key={invoice.id} className="hover:bg-slate-50 transition-colors group">
+                                        <td className="px-6 py-4 font-bold text-slate-900 border-l-4 border-transparent text-black" style={{ '--tw-group-hover-border-color': 'var(--brand-primary)' } as any}>
+                                            {invoice.invoiceNumber}
+                                        </td>
+                                        <td className="px-6 py-4">
+                                            <div className="text-sm font-medium text-slate-900 text-black">{invoice.client?.name}</div>
+                                            <div className="text-xs text-slate-500">{invoice.client?.email}</div>
+                                        </td>
+                                        <td className="px-6 py-4 font-bold text-slate-900 text-black">
+                                            {currencySymbol}{invoice.total?.toFixed(2) || invoice.amount.toFixed(2)}
+                                        </td>
+                                        <td className="px-6 py-4">
+                                            <div className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full border text-[10px] font-bold uppercase tracking-wider inline-flex ${status.color}`}>
+                                                <StatusIcon size={12} />
+                                                {status.label}
+                                            </div>
+                                        </td>
+                                        <td className="px-6 py-4 text-sm text-slate-500">
+                                            {new Date(invoice.createdAt).toLocaleDateString()}
+                                        </td>
+                                        <td className="px-6 py-4 text-right space-x-2">
                                             <button
-                                                onClick={() => updateStatus(invoice.id, 'PAID')}
-                                                className="p-1.5 text-slate-400 hover:text-emerald-600 transition-colors"
-                                                title="Mark as Paid"
+                                                onClick={() => downloadPdf(invoice.id)}
+                                                className="p-1.5 text-slate-400 hover:opacity-80 transition-opacity"
+                                                style={{ color: 'var(--brand-primary)' }}
+                                                title="Download PDF"
                                             >
-                                                <CheckCircle size={18} />
+                                                <Download size={18} />
                                             </button>
-                                        )}
-                                    </td>
-                                </tr>
-                            );
-                        })}
+                                            {invoice.status !== 'PAID' && (
+                                                <button
+                                                    onClick={() => updateStatus(invoice.id, 'PAID')}
+                                                    className="p-1.5 text-slate-400 hover:text-emerald-600 transition-colors"
+                                                    title="Mark as Paid"
+                                                >
+                                                    <CheckCircle size={18} />
+                                                </button>
+                                            )}
+                                        </td>
+                                    </tr>
+                                );
+                            })}
                         {invoices.length === 0 && (
                             <tr>
                                 <td colSpan={6} className="px-6 py-12 text-center text-slate-500">
