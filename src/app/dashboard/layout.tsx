@@ -3,14 +3,14 @@
 import { useEffect, useState } from "react";
 import { useRouter, usePathname } from "next/navigation";
 import Link from "next/link";
-import api from "@/lib/api";
-import { LayoutDashboard, Users, FolderKanban, FileText, Settings, LogOut, Files } from "lucide-react";
+import { LayoutDashboard, Users, FolderKanban, FileText, Settings, LogOut, Files, Menu, X } from "lucide-react";
 import NotificationBell from "@/components/dashboard/NotificationBell";
 import { useBusinessProfile } from "@/hooks/useQueries";
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
     const { data: business } = useBusinessProfile();
     const [user, setUser] = useState<any>(null);
+    const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
     const router = useRouter();
     const pathname = usePathname();
 
@@ -23,6 +23,10 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         }
     }, [router]);
 
+    // Close mobile menu on route change
+    useEffect(() => {
+        setIsMobileMenuOpen(false);
+    }, [pathname]);
 
     const handleLogout = () => {
         localStorage.clear();
@@ -42,20 +46,39 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
     return (
         <div className="h-screen bg-slate-50 flex overflow-hidden">
-            {/* Sidebar */}
-            <aside className="w-64 bg-white border-r border-slate-200 flex flex-col shrink-0">
-                <div className="p-6">
-                    <div className="flex items-center gap-2 mb-8">
-                        {business?.logo ? (
-                            <img src={business.logo} alt="Logo" className="w-8 h-8 object-contain rounded-lg" />
-                        ) : (
-                            <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ backgroundColor: 'var(--brand-primary)' }}>
-                                <span className="text-white font-bold">{business?.name?.[0] || 'CP'}</span>
-                            </div>
-                        )}
-                        <span className="font-bold text-xl text-slate-900 text-black truncate">{business?.name || 'ClientPortal'}</span>
-                    </div>
+            {/* Mobile Sidebar Overlay */}
+            {isMobileMenuOpen && (
+                <div
+                    className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-40 lg:hidden"
+                    onClick={() => setIsMobileMenuOpen(false)}
+                />
+            )}
 
+            {/* Sidebar */}
+            <aside className={`
+                fixed inset-y-0 left-0 z-50 w-64 bg-white border-r border-slate-200 flex flex-col shrink-0 transition-transform duration-300 transform
+                lg:relative lg:translate-x-0
+                ${isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full'}
+            `}>
+                <div className="p-6">
+                    <div className="flex items-center justify-between mb-8">
+                        <div className="flex items-center gap-2">
+                            {business?.logo ? (
+                                <img src={business.logo} alt="Logo" className="w-8 h-8 object-contain rounded-lg" />
+                            ) : (
+                                <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ backgroundColor: 'var(--brand-primary)' }}>
+                                    <span className="text-white font-bold">{business?.name?.[0] || 'CP'}</span>
+                                </div>
+                            )}
+                            <span className="font-bold text-xl text-slate-900 text-black truncate">{business?.name || 'ClientPortal'}</span>
+                        </div>
+                        <button
+                            className="lg:hidden p-1 text-slate-400 hover:text-slate-600 transition-colors"
+                            onClick={() => setIsMobileMenuOpen(false)}
+                        >
+                            <X size={20} />
+                        </button>
+                    </div>
 
                     <nav className="space-y-1">
                         {navItems.map((item) => {
@@ -82,8 +105,8 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                             {user.email[0].toUpperCase()}
                         </div>
                         <div className="flex-1 min-w-0">
-                            <p className="text-xs font-medium text-slate-900 truncate text-black">{user.email}</p>
-                            <p className="text-[10px] text-slate-500 uppercase tracking-wider">{user.role}</p>
+                            <p className="text-xs font-medium text-slate-900 truncate text-black font-bold">{user.email}</p>
+                            <p className="text-[10px] text-slate-500 uppercase tracking-wider font-bold">{user.role}</p>
                         </div>
                     </div>
                     <button
@@ -98,10 +121,18 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
             {/* Main Content */}
             <main className="flex-1 flex flex-col min-w-0 overflow-hidden">
-                <header className="h-16 bg-white border-b border-slate-200 flex items-center justify-between px-8">
-                    <h2 className="text-lg font-semibold text-slate-800 text-black">
-                        {navItems.find(i => i.href === pathname)?.name || "Dashboard"}
-                    </h2>
+                <header className="h-16 bg-white border-b border-slate-200 flex items-center justify-between px-4 lg:px-8 shrink-0">
+                    <div className="flex items-center gap-4">
+                        <button
+                            className="lg:hidden p-2 text-slate-500 hover:bg-slate-50 rounded-lg transition-colors"
+                            onClick={() => setIsMobileMenuOpen(true)}
+                        >
+                            <Menu size={20} />
+                        </button>
+                        <h2 className="text-lg font-bold text-slate-800 text-black">
+                            {navItems.find(i => i.href === pathname)?.name || "Dashboard"}
+                        </h2>
+                    </div>
                     <div className="flex items-center gap-4">
                         {business && user && (
                             <NotificationBell
@@ -112,7 +143,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                     </div>
                 </header>
 
-                <div className="flex-1 overflow-y-auto p-8">
+                <div className="flex-1 overflow-y-auto p-4 lg:p-8">
                     {children}
                 </div>
             </main>
