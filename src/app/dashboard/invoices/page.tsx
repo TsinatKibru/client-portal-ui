@@ -2,7 +2,8 @@
 
 import { useEffect, useState } from "react";
 import api from "@/lib/api";
-import { Plus, Search, FileText, Download, CheckCircle, Clock, AlertCircle, Send } from "lucide-react";
+import { Plus, Search, FileText, Download, CheckCircle, Clock, AlertCircle, Send, Edit2 } from "lucide-react";
+import { toast } from "sonner";
 
 const statusConfig: any = {
     DRAFT: { label: "Draft", icon: AlertCircle, color: "text-slate-600 bg-slate-50 border-slate-100" },
@@ -21,6 +22,7 @@ export default function InvoicesPage() {
         lineItems: [{ description: "", quantity: 1, rate: 0, tax: 0 }]
     });
     const [searchTerm, setSearchTerm] = useState("");
+    const [editingInvoiceId, setEditingInvoiceId] = useState<string | null>(null);
 
     const [business, setBusiness] = useState<any>(null);
 
@@ -46,8 +48,15 @@ export default function InvoicesPage() {
     const handleCreateInvoice = async (e: React.FormEvent) => {
         e.preventDefault();
         try {
-            await api.post("/invoices", newInvoice);
+            if (editingInvoiceId) {
+                await api.patch(`/invoices/${editingInvoiceId}`, newInvoice);
+                toast.success("Invoice updated successfully");
+            } else {
+                await api.post("/invoices", newInvoice);
+                toast.success("Invoice created successfully");
+            }
             setIsModalOpen(false);
+            setEditingInvoiceId(null);
             setNewInvoice({
                 invoiceNumber: `INV-${Date.now().toString().slice(-6)}`,
                 clientId: "",
@@ -56,8 +65,31 @@ export default function InvoicesPage() {
             });
             fetchData();
         } catch (err) {
-            console.error("Failed to create invoice", err);
+            console.error("Failed to save invoice", err);
+            toast.error("Failed to save invoice");
         }
+    };
+
+    const handleEditClick = (invoice: any) => {
+        setNewInvoice({
+            invoiceNumber: invoice.invoiceNumber,
+            clientId: invoice.clientId,
+            status: invoice.status,
+            lineItems: invoice.lineItems
+        });
+        setEditingInvoiceId(invoice.id);
+        setIsModalOpen(true);
+    };
+
+    const handleCloseModal = () => {
+        setIsModalOpen(false);
+        setEditingInvoiceId(null);
+        setNewInvoice({
+            invoiceNumber: `INV-${Date.now().toString().slice(-6)}`,
+            clientId: "",
+            status: "DRAFT",
+            lineItems: [{ description: "", quantity: 1, rate: 0, tax: 0 }]
+        });
     };
 
     const addLineItem = () => {
@@ -107,9 +139,11 @@ export default function InvoicesPage() {
     const updateStatus = async (id: string, status: string) => {
         try {
             await api.patch(`/invoices/${id}/status`, { status });
+            toast.success(`Invoice marked as ${status.toLowerCase()}`);
             fetchData();
         } catch (err) {
             console.error("Failed to update status", err);
+            toast.error("Failed to update status");
         }
     };
 
@@ -190,6 +224,15 @@ export default function InvoicesPage() {
                                             </button>
                                             {invoice.status === 'DRAFT' && (
                                                 <button
+                                                    onClick={() => handleEditClick(invoice)}
+                                                    className="p-1.5 text-slate-400 hover:text-indigo-600 transition-colors"
+                                                    title="Edit Invoice"
+                                                >
+                                                    <Edit2 size={18} />
+                                                </button>
+                                            )}
+                                            {invoice.status === 'DRAFT' && (
+                                                <button
                                                     onClick={() => updateStatus(invoice.id, 'SENT')}
                                                     className="p-1.5 text-slate-400 hover:text-blue-600 transition-colors"
                                                     title="Mark as Sent"
@@ -230,8 +273,8 @@ export default function InvoicesPage() {
                     <div className="bg-white rounded-2xl shadow-2xl max-w-2xl w-full p-8 border border-slate-100 max-h-[90vh] overflow-y-auto">
                         <div className="flex items-center justify-between mb-6">
                             <div>
-                                <h3 className="text-2xl font-bold text-slate-900">New Invoice</h3>
-                                <p className="text-slate-500 text-sm">Create a billing statement for your client.</p>
+                                <h3 className="text-2xl font-bold text-slate-900">{editingInvoiceId ? 'Edit Invoice' : 'New Invoice'}</h3>
+                                <p className="text-slate-500 text-sm">{editingInvoiceId ? 'Modify your billing statement.' : 'Create a billing statement for your client.'}</p>
                             </div>
                             <div className="text-right">
                                 <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">Invoice #</span>
@@ -351,7 +394,7 @@ export default function InvoicesPage() {
                             <div className="flex gap-3 pt-6">
                                 <button
                                     type="button"
-                                    onClick={() => setIsModalOpen(false)}
+                                    onClick={handleCloseModal}
                                     className="flex-1 py-2 text-slate-600 font-bold hover:bg-slate-50 rounded-lg transition-colors border border-slate-200"
                                 >
                                     Cancel
@@ -361,7 +404,7 @@ export default function InvoicesPage() {
                                     className="flex-1 py-2 text-white font-bold rounded-lg hover:brightness-110 shadow-lg transition-all"
                                     style={{ backgroundColor: 'var(--brand-primary)', boxShadow: '0 10px 15px -3px var(--brand-soft)' }}
                                 >
-                                    Create Invoice
+                                    {editingInvoiceId ? 'Update Invoice' : 'Create Invoice'}
                                 </button>
                             </div>
                         </form>

@@ -20,6 +20,8 @@ export default function ProjectsPage() {
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [newProject, setNewProject] = useState({ title: "", description: "", clientId: "" });
     const [searchTerm, setSearchTerm] = useState("");
+    const [statusFilter, setStatusFilter] = useState("ALL");
+    const [clientFilter, setClientFilter] = useState("ALL");
 
     const fetchData = async () => {
         try {
@@ -88,20 +90,42 @@ export default function ProjectsPage() {
 
     return (
         <div className="space-y-6">
-            <div className="flex items-center justify-between">
-                <div className="relative w-96">
-                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
-                    <input
-                        type="text"
-                        placeholder="Search projects..."
-                        value={searchTerm}
-                        onChange={(e) => setSearchTerm(e.target.value)}
-                        className="w-full pl-10 pr-4 py-2 bg-white border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-black text-sm"
-                    />
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                <div className="flex flex-1 items-center gap-4">
+                    <div className="relative flex-1 max-w-sm">
+                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
+                        <input
+                            type="text"
+                            placeholder="Search projects..."
+                            value={searchTerm}
+                            onChange={(e) => setSearchTerm(e.target.value)}
+                            className="w-full pl-10 pr-4 py-2 bg-white border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-black text-sm"
+                        />
+                    </div>
+                    <select
+                        value={statusFilter}
+                        onChange={(e) => setStatusFilter(e.target.value)}
+                        className="px-3 py-2 bg-white border border-slate-200 rounded-lg text-sm text-slate-600 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                    >
+                        <option value="ALL">All Status</option>
+                        <option value="PENDING">Pending</option>
+                        <option value="IN_PROGRESS">In Progress</option>
+                        <option value="DELIVERED">Delivered</option>
+                    </select>
+                    <select
+                        value={clientFilter}
+                        onChange={(e) => setClientFilter(e.target.value)}
+                        className="px-3 py-2 bg-white border border-slate-200 rounded-lg text-sm text-slate-600 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                    >
+                        <option value="ALL">All Clients</option>
+                        {clients.map(client => (
+                            <option key={client.id} value={client.id}>{client.name}</option>
+                        ))}
+                    </select>
                 </div>
                 <button
                     onClick={() => setIsModalOpen(true)}
-                    className="flex items-center gap-2 px-4 py-2 text-white rounded-lg hover:brightness-110 transition-all font-medium text-sm shadow-sm font-bold"
+                    className="flex items-center gap-2 px-4 py-2 text-white rounded-lg hover:brightness-110 transition-all font-medium text-sm shadow-sm font-bold shrink-0"
                     style={{ backgroundColor: 'var(--brand-primary)' }}
                 >
                     <Plus size={18} />
@@ -111,11 +135,16 @@ export default function ProjectsPage() {
 
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                 {projects
-                    .filter(project =>
-                        project.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                        (project.description && project.description.toLowerCase().includes(searchTerm.toLowerCase())) ||
-                        project.client?.name.toLowerCase().includes(searchTerm.toLowerCase())
-                    )
+                    .filter(project => {
+                        const matchesSearch = project.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                            (project.description && project.description.toLowerCase().includes(searchTerm.toLowerCase())) ||
+                            project.client?.name.toLowerCase().includes(searchTerm.toLowerCase());
+
+                        const matchesStatus = statusFilter === 'ALL' || project.status === statusFilter;
+                        const matchesClient = clientFilter === 'ALL' || project.clientId === clientFilter;
+
+                        return matchesSearch && matchesStatus && matchesClient;
+                    })
                     .map((project) => {
                         const status = statusConfig[project.status];
                         const StatusIcon = status.icon;
