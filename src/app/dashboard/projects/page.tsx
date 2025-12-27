@@ -3,9 +3,11 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import api from "@/lib/api";
-import { Plus, Search, Clock, CheckCircle2, AlertCircle, FileUp, FolderKanban, Trash2 } from "lucide-react";
+import { Plus, Search, Clock, CheckCircle2, AlertCircle, FileUp, FolderKanban, Trash2, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import Link from "next/link";
+import { useProjects, useClients } from "@/hooks/useQueries";
+import { useQueryClient } from "@tanstack/react-query";
 
 const statusConfig: any = {
     PENDING: { label: "Pending", icon: AlertCircle, color: "text-amber-600 bg-amber-50 border-amber-100" },
@@ -15,30 +17,19 @@ const statusConfig: any = {
 
 export default function ProjectsPage() {
     const router = useRouter();
-    const [projects, setProjects] = useState<any[]>([]);
-    const [clients, setClients] = useState<any[]>([]);
+    const queryClient = useQueryClient();
+    const { data: projects = [], isLoading: loadingProjects } = useProjects();
+    const { data: clients = [], isLoading: loadingClients } = useClients();
+
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [newProject, setNewProject] = useState({ title: "", description: "", clientId: "" });
     const [searchTerm, setSearchTerm] = useState("");
     const [statusFilter, setStatusFilter] = useState("ALL");
     const [clientFilter, setClientFilter] = useState("ALL");
 
-    const fetchData = async () => {
-        try {
-            const [projRes, clientRes] = await Promise.all([
-                api.get("/projects"),
-                api.get("/clients"),
-            ]);
-            setProjects(projRes.data);
-            setClients(clientRes.data);
-        } catch (err) {
-            console.error("Failed to fetch projects", err);
-        }
+    const invalidateAll = () => {
+        queryClient.invalidateQueries({ queryKey: ["projects"] });
     };
-
-    useEffect(() => {
-        fetchData();
-    }, []);
 
     const handleCreateProject = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -47,7 +38,7 @@ export default function ProjectsPage() {
             setIsModalOpen(false);
             toast.success("Project created successfully");
             setNewProject({ title: "", description: "", clientId: "" });
-            fetchData();
+            invalidateAll();
         } catch (err) {
             console.error("Failed to create project", err);
             toast.error("Failed to create project");
@@ -58,7 +49,7 @@ export default function ProjectsPage() {
         try {
             await api.patch(`/projects/${id}/status`, { status });
             toast.success(`Status updated to ${status.replace('_', ' ')}`);
-            fetchData();
+            invalidateAll();
         } catch (err) {
             console.error("Failed to update status", err);
             toast.error("Failed to update status");
@@ -74,7 +65,7 @@ export default function ProjectsPage() {
                     try {
                         await api.delete(`/projects/${id}`);
                         toast.success("Project deleted successfully");
-                        fetchData();
+                        invalidateAll();
                     } catch (err) {
                         console.error("Failed to delete project", err);
                         toast.error("Delete failed. Please try again.");
@@ -118,7 +109,7 @@ export default function ProjectsPage() {
                         className="px-3 py-2 bg-white border border-slate-200 rounded-lg text-sm text-slate-600 focus:outline-none focus:ring-2 focus:ring-indigo-500"
                     >
                         <option value="ALL">All Clients</option>
-                        {clients.map(client => (
+                        {clients.map((client: any) => (
                             <option key={client.id} value={client.id}>{client.name}</option>
                         ))}
                     </select>
@@ -135,7 +126,7 @@ export default function ProjectsPage() {
 
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                 {projects
-                    .filter(project => {
+                    .filter((project: any) => {
                         const matchesSearch = project.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
                             (project.description && project.description.toLowerCase().includes(searchTerm.toLowerCase())) ||
                             project.client?.name.toLowerCase().includes(searchTerm.toLowerCase());
@@ -145,7 +136,7 @@ export default function ProjectsPage() {
 
                         return matchesSearch && matchesStatus && matchesClient;
                     })
-                    .map((project) => {
+                    .map((project: any) => {
                         const status = statusConfig[project.status];
                         const StatusIcon = status.icon;
                         return (
@@ -241,7 +232,7 @@ export default function ProjectsPage() {
                                     className="w-full px-4 py-2 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
                                 >
                                     <option value="">Choose a client...</option>
-                                    {clients.map(c => (
+                                    {clients.map((c: any) => (
                                         <option key={c.id} value={c.id}>{c.name}</option>
                                     ))}
                                 </select>

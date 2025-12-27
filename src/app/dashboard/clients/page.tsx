@@ -1,12 +1,16 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import api from "@/lib/api";
-import { Plus, Search, Mail, Phone, MoreVertical, Key, CheckCircle2, ShieldOff } from "lucide-react";
+import { Plus, Search, Mail, Phone, MoreVertical, Key, CheckCircle2, ShieldOff, Loader2 } from "lucide-react";
 import { toast } from "sonner";
+import { useClients } from "@/hooks/useQueries";
+import { useQueryClient } from "@tanstack/react-query";
 
 export default function ClientsPage() {
-    const [clients, setClients] = useState<any[]>([]);
+    const queryClient = useQueryClient();
+    const { data: clients = [], isLoading: loadingClients } = useClients();
+
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [isPortalModalOpen, setIsPortalModalOpen] = useState(false);
     const [selectedClient, setSelectedClient] = useState<any>(null);
@@ -15,18 +19,9 @@ export default function ClientsPage() {
     const [menuOpenClientId, setMenuOpenClientId] = useState<string | null>(null);
     const [searchTerm, setSearchTerm] = useState("");
 
-    const fetchClients = async () => {
-        try {
-            const res = await api.get("/clients");
-            setClients(res.data);
-        } catch (err) {
-            console.error("Failed to fetch clients", err);
-        }
+    const invalidateAll = () => {
+        queryClient.invalidateQueries({ queryKey: ["clients"] });
     };
-
-    useEffect(() => {
-        fetchClients();
-    }, []);
 
     const handleCreateClient = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -34,9 +29,11 @@ export default function ClientsPage() {
             await api.post("/clients", newClient);
             setIsModalOpen(false);
             setNewClient({ name: "", email: "", phone: "" });
-            fetchClients();
+            toast.success("Client added successfully");
+            invalidateAll();
         } catch (err) {
             console.error("Failed to create client", err);
+            toast.error("Failed to create client");
         }
     };
 
@@ -46,9 +43,11 @@ export default function ClientsPage() {
             await api.patch(`/clients/${selectedClient.id}/enable-portal`, { password: portalPassword });
             setIsPortalModalOpen(false);
             setPortalPassword("");
-            fetchClients();
+            toast.success("Portal access enabled");
+            invalidateAll();
         } catch (err) {
             console.error("Failed to enable portal", err);
+            toast.error("Failed to enable portal");
         }
     };
 
@@ -58,13 +57,20 @@ export default function ClientsPage() {
             await api.patch(`/clients/${client.id}/disable-portal`);
             toast.success("Portal access deactivated");
             setMenuOpenClientId(null);
-            fetchClients();
+            invalidateAll();
         } catch (err: any) {
             console.error("Failed to disable portal", err);
             toast.error("Failed to deactivate portal");
         }
     };
 
+    if (loadingClients) {
+        return (
+            <div className="flex items-center justify-center py-20">
+                <Loader2 className="animate-spin text-slate-300" size={32} />
+            </div>
+        );
+    }
 
     return (
         <div className="space-y-6">
@@ -102,12 +108,12 @@ export default function ClientsPage() {
                     </thead>
                     <tbody className="divide-y divide-slate-100">
                         {clients
-                            .filter(client =>
+                            .filter((client: any) =>
                                 client.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
                                 client.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
                                 (client.phone && client.phone.toLowerCase().includes(searchTerm.toLowerCase()))
                             )
-                            .map((client) => (
+                            .map((client: any) => (
                                 <tr key={client.id} className="hover:bg-slate-50 transition-colors group">
                                     <td className="px-6 py-4">
                                         <div className="flex items-center gap-3">

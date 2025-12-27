@@ -1,8 +1,8 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { usePortalInvoices, useBusinessProfile } from "@/hooks/useQueries";
 import api from "@/lib/api";
-import { FileText, Download, CheckCircle, Clock, AlertCircle } from "lucide-react";
+import { FileText, Download, CheckCircle, Clock, AlertCircle, Loader2 } from "lucide-react";
 
 const statusConfig: any = {
     SENT: { label: "Sent", icon: Clock, color: "text-blue-600 bg-blue-50 border-blue-100" },
@@ -10,19 +10,8 @@ const statusConfig: any = {
 };
 
 export default function ClientInvoicesPage() {
-    const [invoices, setInvoices] = useState<any[]>([]);
-
-    useEffect(() => {
-        const fetchInvoices = async () => {
-            try {
-                const res = await api.get("/portal/invoices");
-                setInvoices(res.data);
-            } catch (err) {
-                console.error("Failed to fetch invoices", err);
-            }
-        };
-        fetchInvoices();
-    }, []);
+    const { data: invoices = [], isLoading } = usePortalInvoices();
+    const { data: business } = useBusinessProfile();
 
     const downloadPdf = async (id: string) => {
         try {
@@ -38,6 +27,16 @@ export default function ClientInvoicesPage() {
             console.error("Failed to download PDF", err);
         }
     };
+
+    const currencySymbol = business?.currency === 'EUR' ? '€' : business?.currency === 'GBP' ? '£' : '$';
+
+    if (isLoading) {
+        return (
+            <div className="flex items-center justify-center py-20">
+                <Loader2 className="animate-spin text-slate-300" size={32} />
+            </div>
+        );
+    }
 
     return (
         <div className="space-y-6">
@@ -58,7 +57,7 @@ export default function ClientInvoicesPage() {
                         </tr>
                     </thead>
                     <tbody className="divide-y divide-slate-100">
-                        {invoices.map((invoice) => {
+                        {invoices.map((invoice: any) => {
                             const status = statusConfig[invoice.status];
                             const StatusIcon = status.icon;
                             return (
@@ -67,7 +66,7 @@ export default function ClientInvoicesPage() {
                                         {invoice.invoiceNumber}
                                     </td>
                                     <td className="px-6 py-4 font-bold text-slate-900 text-black">
-                                        ${invoice.amount.toFixed(2)}
+                                        {currencySymbol}{invoice.total?.toFixed(2) || invoice.amount.toFixed(2)}
                                     </td>
                                     <td className="px-6 py-4">
                                         <div className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full border text-[10px] font-bold uppercase tracking-wider inline-flex ${status.color}`}>

@@ -1,8 +1,7 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import api from "@/lib/api";
-import { Briefcase, AlertCircle, Clock, CheckCircle2, ChevronRight, FileUp } from "lucide-react";
+import { usePortalProjects } from "@/hooks/useQueries";
+import { Briefcase, AlertCircle, Clock, CheckCircle2, ChevronRight, Loader2 } from "lucide-react";
 import Link from "next/link";
 
 const statusConfig: any = {
@@ -12,19 +11,15 @@ const statusConfig: any = {
 };
 
 export default function ClientProjectsPage() {
-    const [projects, setProjects] = useState<any[]>([]);
+    const { data: projects = [], isLoading } = usePortalProjects();
 
-    useEffect(() => {
-        const fetchProjects = async () => {
-            try {
-                const res = await api.get("/portal/projects");
-                setProjects(res.data);
-            } catch (err) {
-                console.error("Failed to fetch projects", err);
-            }
-        };
-        fetchProjects();
-    }, []);
+    if (isLoading) {
+        return (
+            <div className="flex items-center justify-center py-20">
+                <Loader2 className="animate-spin text-slate-300" size={32} />
+            </div>
+        );
+    }
 
     return (
         <div className="space-y-6">
@@ -34,7 +29,7 @@ export default function ClientProjectsPage() {
             </div>
 
             <div className="grid grid-cols-1 gap-4">
-                {projects.map((project) => {
+                {projects.map((project: any) => {
                     const status = statusConfig[project.status];
                     const StatusIcon = status.icon;
                     return (

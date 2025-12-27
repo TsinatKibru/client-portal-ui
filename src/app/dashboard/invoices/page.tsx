@@ -1,9 +1,11 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import api from "@/lib/api";
-import { Plus, Search, FileText, Download, CheckCircle, Clock, AlertCircle, Send, Edit2 } from "lucide-react";
+import { Plus, Search, FileText, Download, CheckCircle, Clock, AlertCircle, Send, Edit2, Loader2 } from "lucide-react";
 import { toast } from "sonner";
+import { useInvoices, useClients, useBusinessProfile } from "@/hooks/useQueries";
+import { useQueryClient } from "@tanstack/react-query";
 
 const statusConfig: any = {
     DRAFT: { label: "Draft", icon: AlertCircle, color: "text-slate-600 bg-slate-50 border-slate-100" },
@@ -12,8 +14,11 @@ const statusConfig: any = {
 };
 
 export default function InvoicesPage() {
-    const [invoices, setInvoices] = useState<any[]>([]);
-    const [clients, setClients] = useState<any[]>([]);
+    const queryClient = useQueryClient();
+    const { data: invoices = [], isLoading: loadingInvoices } = useInvoices();
+    const { data: clients = [], isLoading: loadingClients } = useClients();
+    const { data: business } = useBusinessProfile();
+
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [newInvoice, setNewInvoice] = useState({
         invoiceNumber: `INV-${Date.now().toString().slice(-6)}`,
@@ -24,26 +29,9 @@ export default function InvoicesPage() {
     const [searchTerm, setSearchTerm] = useState("");
     const [editingInvoiceId, setEditingInvoiceId] = useState<string | null>(null);
 
-    const [business, setBusiness] = useState<any>(null);
-
-    const fetchData = async () => {
-        try {
-            const [invRes, clientRes, bizRes] = await Promise.all([
-                api.get("/invoices"),
-                api.get("/clients"),
-                api.get("/business/profile")
-            ]);
-            setInvoices(invRes.data);
-            setClients(clientRes.data);
-            setBusiness(bizRes.data);
-        } catch (err) {
-            console.error("Failed to fetch data", err);
-        }
+    const invalidateAll = () => {
+        queryClient.invalidateQueries({ queryKey: ["invoices"] });
     };
-
-    useEffect(() => {
-        fetchData();
-    }, []);
 
     const handleCreateInvoice = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -63,7 +51,7 @@ export default function InvoicesPage() {
                 status: "DRAFT",
                 lineItems: [{ description: "", quantity: 1, rate: 0, tax: 0 }]
             });
-            fetchData();
+            invalidateAll();
         } catch (err) {
             console.error("Failed to save invoice", err);
             toast.error("Failed to save invoice");
@@ -140,12 +128,20 @@ export default function InvoicesPage() {
         try {
             await api.patch(`/invoices/${id}/status`, { status });
             toast.success(`Invoice marked as ${status.toLowerCase()}`);
-            fetchData();
+            invalidateAll();
         } catch (err) {
             console.error("Failed to update status", err);
             toast.error("Failed to update status");
         }
     };
+
+    if (loadingInvoices || loadingClients) {
+        return (
+            <div className="flex items-center justify-center py-20">
+                <Loader2 className="animate-spin text-slate-300" size={32} />
+            </div>
+        );
+    }
 
     return (
         <div className="space-y-6">
@@ -185,11 +181,11 @@ export default function InvoicesPage() {
                     </thead>
                     <tbody className="divide-y divide-slate-100">
                         {invoices
-                            .filter(invoice =>
+                            .filter((invoice: any) =>
                                 invoice.invoiceNumber.toLowerCase().includes(searchTerm.toLowerCase()) ||
                                 invoice.client?.name.toLowerCase().includes(searchTerm.toLowerCase())
                             )
-                            .map((invoice) => {
+                            .map((invoice: any) => {
                                 const status = statusConfig[invoice.status];
                                 const StatusIcon = status.icon;
                                 return (
@@ -293,7 +289,7 @@ export default function InvoicesPage() {
                                     style={{ '--tw-ring-color': 'var(--brand-primary)' } as any}
                                 >
                                     <option value="">Choose a client...</option>
-                                    {clients.map(c => (
+                                    {clients.map((c: any) => (
                                         <option key={c.id} value={c.id}>{c.name}</option>
                                     ))}
                                 </select>

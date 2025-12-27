@@ -6,10 +6,11 @@ import Link from "next/link";
 import api from "@/lib/api";
 import { LayoutDashboard, Users, FolderKanban, FileText, Settings, LogOut, Files } from "lucide-react";
 import NotificationBell from "@/components/dashboard/NotificationBell";
+import { useBusinessProfile } from "@/hooks/useQueries";
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
+    const { data: business } = useBusinessProfile();
     const [user, setUser] = useState<any>(null);
-    const [business, setBusiness] = useState<any>(null);
     const router = useRouter();
     const pathname = usePathname();
 
@@ -20,16 +21,6 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         } else {
             setUser(JSON.parse(storedUser));
         }
-
-        const fetchBusiness = async () => {
-            try {
-                const res = await api.get("/business/profile");
-                setBusiness(res.data);
-            } catch (err) {
-                console.error("Failed to fetch business branding", err);
-            }
-        };
-        fetchBusiness();
     }, [router]);
 
 
