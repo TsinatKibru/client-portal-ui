@@ -5,6 +5,7 @@ import { useRouter, usePathname } from "next/navigation";
 import Link from "next/link";
 import api from "@/lib/api";
 import { LayoutDashboard, FileText, LucideBriefcase, LogOut, Settings } from "lucide-react";
+import NotificationBell from "@/components/dashboard/NotificationBell";
 
 export default function PortalLayout({ children }: { children: React.ReactNode }) {
     const [user, setUser] = useState<any>(null);
@@ -48,7 +49,7 @@ export default function PortalLayout({ children }: { children: React.ReactNode }
     return (
         <div className="flex h-screen bg-slate-50 overflow-hidden">
             {/* Sidebar */}
-            <aside className="w-64 bg-slate-900 text-white flex flex-col">
+            <aside className="w-64 bg-slate-900 text-white flex flex-col shrink-0">
                 <div className="p-6 flex items-center gap-3">
                     {business?.logo ? (
                         <img src={business.logo} alt="Logo" className="w-10 h-10 object-contain rounded-lg bg-white p-1" />
@@ -119,7 +120,13 @@ export default function PortalLayout({ children }: { children: React.ReactNode }
             <main className="flex-1 flex flex-col overflow-hidden">
                 <header className="h-16 bg-white border-b border-slate-200 flex items-center justify-between px-8 shrink-0">
                     <h1 className="text-lg font-bold text-slate-900 text-black">Welcome Back</h1>
-                    <div className="flex items-center gap-3">
+                    <div className="flex items-center gap-4">
+                        {business && user && (
+                            <NotificationBell
+                                businessId={business.id}
+                                userId={user.id}
+                            />
+                        )}
                         <div className="text-right">
                             <p className="text-sm font-bold text-slate-900 text-black">{user.email}</p>
                             <p className="text-[10px] text-slate-500 uppercase font-bold tracking-wider">Client Account</p>

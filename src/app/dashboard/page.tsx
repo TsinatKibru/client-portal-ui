@@ -3,6 +3,9 @@
 import { useEffect, useState } from "react";
 import api from "@/lib/api";
 import { FolderKanban, Users, Clock, CheckCircle2, FileUp, RefreshCcw, MessageSquare } from "lucide-react";
+import RevenueChart from "@/components/dashboard/RevenueChart";
+import ProjectStatusChart from "@/components/dashboard/ProjectStatusChart";
+import PendingTasks from "@/components/dashboard/PendingTasks";
 
 const activityIcons: any = {
     FILE_UPLOAD: { icon: FileUp, color: "text-blue-600 bg-blue-50" },
@@ -17,14 +20,20 @@ export default function OverviewPage() {
         completedProjects: 0,
     });
     const [activities, setActivities] = useState<any[]>([]);
+    const [revenueData, setRevenueData] = useState<any[]>([]);
+    const [projectData, setProjectData] = useState<any[]>([]);
+    const [pendingData, setPendingData] = useState<any>({ overdueInvoices: [], activeProjects: [] });
 
     useEffect(() => {
         const fetchData = async () => {
             try {
-                const [clients, projects, activityRes] = await Promise.all([
+                const [clients, projects, activityRes, revenueRes, projectStatsRes, pendingRes] = await Promise.all([
                     api.get("/clients"),
                     api.get("/projects"),
                     api.get("/activities/business"),
+                    api.get("/stats/revenue"),
+                    api.get("/stats/projects"),
+                    api.get("/stats/pending"),
                 ]);
                 setStats({
                     totalClients: clients.data.length,
@@ -32,6 +41,9 @@ export default function OverviewPage() {
                     completedProjects: projects.data.filter((p: any) => p.status === "DELIVERED").length,
                 });
                 setActivities(activityRes.data);
+                setRevenueData(revenueRes.data);
+                setProjectData(projectStatsRes.data);
+                setPendingData(pendingRes.data);
             } catch (err) {
                 console.error("Failed to fetch dashboard data", err);
             }
@@ -64,41 +76,51 @@ export default function OverviewPage() {
                 })}
             </div>
 
-            <div className="bg-white rounded-3xl shadow-sm border border-slate-200">
-                <div className="p-6 border-b border-slate-100 flex items-center justify-between">
-                    <h3 className="font-bold text-slate-900 text-black">Recent Activity</h3>
-                    <button className="text-sm font-semibold hover:opacity-80 transition-opacity" style={{ color: 'var(--brand-primary)' }}>View all</button>
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                <RevenueChart data={revenueData} />
+                <ProjectStatusChart data={projectData} />
+            </div>
+
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                <div className="lg:col-span-1">
+                    <PendingTasks data={pendingData} />
                 </div>
-                <div className="p-6">
-                    <div className="space-y-6">
-                        {activities.map((activity) => {
-                            const Config = activityIcons[activity.type] || { icon: Clock, color: "text-slate-600 bg-slate-50" };
-                            const Icon = Config.icon;
-                            return (
-                                <div key={activity.id} className="flex items-start gap-4">
-                                    <div className={`p-2 rounded-lg ${Config.color} shrink-0`}>
-                                        <Icon size={16} />
-                                    </div>
-                                    <div className="flex-1 min-w-0">
-                                        <p className="text-sm font-bold text-slate-900 truncate">
-                                            {activity.description}
-                                        </p>
-                                        <div className="flex items-center gap-2 mt-0.5">
-                                            <span className="text-[10px] font-bold text-slate-400 uppercase">
-                                                {activity.project?.title}
-                                            </span>
-                                            <span className="text-[10px] text-slate-300">•</span>
-                                            <span className="text-[10px] text-slate-400">
-                                                {new Date(activity.createdAt).toLocaleDateString()}
-                                            </span>
+                <div className="lg:col-span-2 bg-white rounded-3xl shadow-sm border border-slate-200">
+                    <div className="p-6 border-b border-slate-100 flex items-center justify-between">
+                        <h3 className="font-bold text-slate-900 text-black">Recent Activity</h3>
+                        <button className="text-sm font-semibold hover:opacity-80 transition-opacity" style={{ color: 'var(--brand-primary)' }}>View all</button>
+                    </div>
+                    <div className="p-6">
+                        <div className="space-y-6">
+                            {activities.map((activity) => {
+                                const Config = activityIcons[activity.type] || { icon: Clock, color: "text-slate-600 bg-slate-50" };
+                                const Icon = Config.icon;
+                                return (
+                                    <div key={activity.id} className="flex items-start gap-4">
+                                        <div className={`p-2 rounded-lg ${Config.color} shrink-0`}>
+                                            <Icon size={16} />
+                                        </div>
+                                        <div className="flex-1 min-w-0">
+                                            <p className="text-sm font-bold text-slate-900 truncate">
+                                                {activity.description}
+                                            </p>
+                                            <div className="flex items-center gap-2 mt-0.5">
+                                                <span className="text-[10px] font-bold text-slate-400 uppercase">
+                                                    {activity.project?.title}
+                                                </span>
+                                                <span className="text-[10px] text-slate-300">•</span>
+                                                <span className="text-[10px] text-slate-400">
+                                                    {new Date(activity.createdAt).toLocaleDateString()}
+                                                </span>
+                                            </div>
                                         </div>
                                     </div>
-                                </div>
-                            );
-                        })}
-                        {activities.length === 0 && (
-                            <p className="text-slate-500 text-center py-12">No recent activity to show.</p>
-                        )}
+                                );
+                            })}
+                            {activities.length === 0 && (
+                                <p className="text-slate-500 text-center py-12">No recent activity to show.</p>
+                            )}
+                        </div>
                     </div>
                 </div>
             </div>

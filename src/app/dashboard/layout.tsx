@@ -5,6 +5,7 @@ import { useRouter, usePathname } from "next/navigation";
 import Link from "next/link";
 import api from "@/lib/api";
 import { LayoutDashboard, Users, FolderKanban, FileText, Settings, LogOut, Files } from "lucide-react";
+import NotificationBell from "@/components/dashboard/NotificationBell";
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
     const [user, setUser] = useState<any>(null);
@@ -49,9 +50,9 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     ];
 
     return (
-        <div className="min-h-screen bg-slate-50 flex">
+        <div className="h-screen bg-slate-50 flex overflow-hidden">
             {/* Sidebar */}
-            <aside className="w-64 bg-white border-r border-slate-200 flex flex-col">
+            <aside className="w-64 bg-white border-r border-slate-200 flex flex-col shrink-0">
                 <div className="p-6">
                     <div className="flex items-center gap-2 mb-8">
                         {business?.logo ? (
@@ -111,7 +112,12 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                         {navItems.find(i => i.href === pathname)?.name || "Dashboard"}
                     </h2>
                     <div className="flex items-center gap-4">
-                        {/* Header actions */}
+                        {business && user && (
+                            <NotificationBell
+                                businessId={business.id}
+                                userId={user.id}
+                            />
+                        )}
                     </div>
                 </header>
 
